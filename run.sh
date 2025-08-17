@@ -10,7 +10,7 @@
 #   - TCP=1 QUIC=1: TCP and QUIC runs concurrently
 
 #SCENARIO="drop-rate --delay=15ms --bandwidth=2Mbps --queue=25 --rate_to_client=2 --rate_to_server=2" \
-docker compose build;
-SCENARIO="rebind --delay=15ms --bandwidth=1Mbps --queue=25 --first-rebind=10s --rebind-freq=10s --rebind-addr" \
-QUIC=1 \
+docker compose build &&
+SCENARIO="rebind --delay=15ms --bandwidth=2Mbps --queue=25 --first-rebind=10s --rebind-freq=10s --rebind-addr" \
+QUIC=2 \
 docker-compose up
