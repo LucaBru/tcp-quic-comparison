@@ -1,0 +1,98 @@
+version: "3.5"
+
+services:
+  sim:
+    build: "sim"
+    container_name: sim
+    hostname: sim
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./logs/sim:/logs
+    environment:
+      - SCENARIO=$SCENARIO
+    cap_add: 
+      - NET_ADMIN
+    expose:
+      - "57832"
+    networks:
+      leftnet:
+        ipv4_address: 193.167.0.2
+        ipv6_address: fd00:cafe:cafe:0::2
+      rightnet:
+        ipv4_address: 193.167.100.2
+        ipv6_address: fd00:cafe:cafe:100::2
+
+  server:
+    build: "go-impl"
+    container_name: server
+    hostname: server
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./logs/server:/logs
+    environment:
+      - ROLE=server
+      - SERVER_PARAMS=$SERVER_PARAMS
+    depends_on:
+      - sim
+    cap_add: 
+      - NET_ADMIN
+    networks:
+      rightnet:
+        ipv4_address: 193.167.100.100
+        ipv6_address: fd00:cafe:cafe:100::100
+    extra_hosts:
+      - "client4:193.167.0.100"
+      - "client6:fd00:cafe:cafe:0::100"
+      - "client46:193.167.0.100"
+      - "client46:fd00:cafe:cafe:0::100"
+    ports:
+      - "5001:6121"
+  client:
+    build: "go-impl"
+    container_name: client
+    hostname: client
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./logs/client:/logs
+    environment:
+      - ROLE=client
+      - CLIENT_PARAMS=$CLIENT_PARAMS
+      - TCP=$TCP
+      - QUIC=$QUIC
+      - SCENARIO=$SCENARIO
+#    depends_on:
+#      - sim
+    cap_add: 
+      - NET_ADMIN
+    networks:
+      leftnet:
+        ipv4_address: 193.167.0.100
+        ipv6_address: fd00:cafe:cafe:0::100
+    extra_hosts:
+      - "server4:193.167.100.100"
+      - "server6:fd00:cafe:cafe:100::100"
+      - "server46:193.167.100.100"
+      - "server46:fd00:cafe:cafe:100::100"
+
+networks:
+  leftnet:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: 'false'
+    enable_ipv6: true
+    ipam:
+      config:
+        - subnet: 193.167.0.0/24
+        - subnet: fd00:cafe:cafe:0::/64
+  rightnet:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: 'false'
+    enable_ipv6: true
+    ipam:
+      config:
+        - subnet: 193.167.100.0/24
+        - subnet: fd00:cafe:cafe:100::/64
